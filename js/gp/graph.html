@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.bundle.min.js"></script>
+</head>
+<body onLoad="ready()">
+<canvas id="myChart" width="250" height="100"></canvas>
+<script>
+
+  var ctx = document.getElementById("myChart");
+
+  var myChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [1,2,3,4],
+      datasets: [{
+        label: 'Dados Brutos',
+        data: [],//start empty
+        fill: false,
+        backgroundColor: [
+          'rgba(10, 168, 196, 0.2)',
+          'rgba(102, 96, 151, 0.2)',
+          'rgba(57, 87, 255, 0.2)',
+          'rgba(233, 182, 233, 0.2)',
+          'rgba(108, 213, 207, 0.2)',
+          'rgba(125, 178, 230, 0.2)'
+        ],
+        borderColor: [
+          'rgba(10, 168, 196, 1)',
+          'rgba(102, 96, 151, 1)',
+          'rgba(57, 87, 255, 1)',
+          'rgba(233, 182, 233, 1)',
+          'rgba(108, 213, 207, 1)',
+          'rgba(125, 178, 230, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        yAxes: [{
+          ticks: {
+            /*
+            min: 20,
+            max: 800
+            */
+            beginAtZero: false
+          }
+        }]
+      },
+      onClick: handleClick
+    }
+  });
+
+  window.onmessage = function(event){
+    console.log(event.data[1]);
+    if (event.data){
+      //console.log(event.data);
+      myChart.data.datasets[0].data = event.data[1];
+      myChart.data.labels = event.data[0]
+      myChart.update();
+      //if (Array.isArray(event.data)) {}
+    } else {
+      console.log("HTML Code Element received a generic message:");
+      //console.log(event.data);
+    }
+  };
+
+  function handleClick(e){
+    var activeBars = myChart.getElementAtEvent(e);
+
+    var value = myChart.config.data.datasets[activeBars[0]._datasetIndex].data[activeBars[0]._index];
+    var label = activeBars[0]._model.label;
+
+    window.parent.postMessage({
+      "type":"click",
+      "label":label,
+      "value":value
+    } , "*");
+  }
+
+  function ready(){
+    window.parent.postMessage({"type":"ready"}, "*");
+  }
+
+</script>
+
+</body>
+</html>
