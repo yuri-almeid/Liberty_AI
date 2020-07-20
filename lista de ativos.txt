@@ -1,0 +1,111 @@
+      "display_name": "AUD/CAD",
+      "symbol": "frxAUDCAD",
+
+      "display_name": "AUD/CHF",
+      "symbol": "frxAUDCHF",
+
+      "display_name": "AUD/JPY",
+      "symbol": "frxAUDJPY",
+
+      "display_name": "AUD/NZD",
+      "symbol": "frxAUDNZD",
+
+      "display_name": "AUD/USD",
+      "symbol": "frxAUDUSD",
+
+      "display_name": "EUR/AUD",
+      "symbol": "frxEURAUD",
+
+      "display_name": "EUR/CAD",
+      "symbol": "frxEURCAD",
+
+      "display_name": "EUR/CHF",
+      "symbol": "frxEURCHF",
+
+      "display_name": "EUR/GBP",
+      "symbol": "frxEURGBP",
+
+      "display_name": "EUR/JPY",
+      "symbol": "frxEURJPY",
+
+      "display_name": "EUR/NZD",
+      "symbol": "frxEURNZD",
+
+      "display_name": "EUR/USD",
+      "symbol": "frxEURUSD",
+
+      "display_name": "GBP/AUD",
+      "symbol": "frxGBPAUD",
+
+      "display_name": "GBP/CAD",
+      "symbol": "frxGBPCAD",
+
+      "display_name": "GBP/CHF",
+      "symbol": "frxGBPCHF",
+
+      "display_name": "GBP/JPY",
+      "symbol": "frxGBPJPY",
+
+      "display_name": "GBP/NOK",
+      "symbol": "frxGBPNOK",
+
+      "display_name": "GBP/NZD",
+      "symbol": "frxGBPNZD",
+
+      "display_name": "GBP/USD",
+      "symbol": "frxGBPUSD",
+
+      "display_name": "Gold/USD",
+      "symbol": "frxXAUUSD",
+
+      "display_name": "NZD/JPY",
+      "symbol": "frxNZDJPY",
+
+      "display_name": "NZD/USD",
+      "symbol": "frxNZDUSD",
+
+      "display_name": "Oil/USD",
+      "symbol": "frxBROUSD",
+
+      "display_name": "Palladium/USD",
+      "symbol": "frxXPDUSD",
+
+      "display_name": "Silver/USD",
+      "symbol": "frxXAGUSD",
+
+      "display_name": "USD/CAD",
+      "symbol": "frxUSDCAD",
+
+      "display_name": "USD/CHF",
+      "symbol": "frxUSDCHF",
+
+      "display_name": "USD/JPY",
+      "symbol": "frxUSDJPY",
+
+      "display_name": "USD/MXN",
+      "symbol": "frxUSDMXN",
+
+      "display_name": "USD/NOK",
+      "symbol": "frxUSDNOK",
+  
+      "display_name": "USD/PLN",
+      "symbol": "frxUSDPLN",
+
+      "display_name": "USD/SEK",
+      "symbol": "frxUSDSEK",
+
+      "display_name": "Volatility 10 Index",
+      "symbol": "R_10",
+
+      "display_name": "Volatility 25 Index",
+      "symbol": "R_25",
+
+      "display_name": "Volatility 50 Index",
+      "symbol": "R_50",
+
+      "display_name": "Volatility 75 Index",
+      "symbol": "R_75",
+
+      "display_name": "Volatility 100 Index",
+      "symbol": "R_100",
+

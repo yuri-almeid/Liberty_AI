@@ -38,8 +38,12 @@ const inputLayer = tf.layers.dense({units: 4, inputShape: [4]});
 model.add(inputLayer);
 model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
 
+console.log(qtdLinhas);
+
 const x = tf.tensor(X, [qtdLinhas, 4]);
 const y = tf.tensor(Y);
+
+console.log(x);
 
 const arrInput = [[3.9285, 3.9708, 3.9781, 3.9251]]; // 08.05.2019
 //const arrInput = [[3.9466, 3.9283, 3.9818, 3.9283]]; // 09.05.2019
