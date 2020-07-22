@@ -162,7 +162,7 @@ async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_t
 		//console.log('dbg')
 		model.add(inputLayer);
 		model.add(hiddenLayer);
-		model.compile({ loss: 'meanSquaredError', optimizer: tf.train.sgd(.005) }); // 
+		model.compile({ loss: 'meanSquaredError', optimizer: tf.train.sgd(.5) }); // 
 		//console.log('dbg')
 
 		const x = tf.tensor(X, [parseInt(q_train, 10) - 1, 4]);
