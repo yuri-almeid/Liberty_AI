@@ -1,4 +1,5 @@
 const tf = require('@tensorflow/tfjs');
+const WebSocket = require('ws');
 
 var history;
 
@@ -12,9 +13,9 @@ function epochToJsDate(ts) {
 
 function get_history(sym, periodo, stl) {
 	var ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-	console.log(periodo);
+	//console.log(periodo);
 	periodo = parseInt(periodo, 10) + 1;
-	console.log(periodo);
+	//console.log(periodo);
 
 	ws.onopen = function (evt) {
 		ws.send(JSON.stringify({
@@ -41,7 +42,8 @@ function get_history(sym, periodo, stl) {
 function AI_preprocessing_tk(data, epochs_) {
 
 	console.log('--------- PRE-PROCESSAMENTO DOS DADOS ---------')
-	console.log('Dados coletados: ', data)
+  //console.log('Dados coletados: ', data)
+  console.log('Dados coletados');
 	let price = []; // dados de preços
 	let parity = []; // dados de paridade
 	let next = []; // dados da próxima paridade
@@ -81,7 +83,7 @@ function AI_preprocessing_tk(data, epochs_) {
 	datetime.pop();
 	next.pop();
 
-	console.log([price, aux, epoch, datetime, parity, next])
+	//console.log([price, aux, epoch, datetime, parity, next])
 	// Plot no grafico
 	//$w("#ativo").postMessage([epoch, price]);
 
@@ -132,41 +134,48 @@ function AI_preprocessing_tk(data, epochs_) {
 	// Definindo de fato as matrizes
 	//X.push(epoch_train, price_train);
 	//Y.push(parity_train);
-	console.log('\n');
-	console.log('Pre-processamento de dados completo:')
-	console.log('Variáveis Independentes: ', X);
-	console.log('Variáveis Dependentes: ', Y);
-	AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_test);
+	//console.log('\n');
+	console.log('Pre-processamento de dados completo')
+	//console.log('Variáveis Independentes: ', X);
+  //console.log('Variáveis Dependentes: ', Y);
+  
+  //console.log(X.length);
+  //console.log(Y.length);
+  AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_test);
+  
+  
+
 
 }
 
 async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_test) {
-	console.log('\n');
+	//console.log('\n');
 	console.log('---------TREINAMENTO DA REDE NEURAL ARTIFICIAL ---------')
 	let model = null;
 	let taxa = 1;
 	console.log('Treinamento Iniciado...')
 	while (taxa > 0.1) {
 		model = tf.sequential(); // Modelo de fluxo de dados da rede
-		console.log('dbg')
+		//console.log('dbg')
 		const inputLayer = tf.layers.dense({ units: 8, inputShape: [4], activation: 'linear', useBias: true }); // Camada de entrada
 		const hiddenLayer = tf.layers.dense({ units: 4, inputShape: [8], activation: 'linear', useBias: true }); // Camada oculta
-		console.log('dbg')
+		//console.log('dbg')
 		model.add(inputLayer);
 		model.add(hiddenLayer);
 		model.compile({ loss: 'meanSquaredError', optimizer: tf.train.sgd(.005) }); // 
-		console.log('dbg')
+		//console.log('dbg')
 
-		const x = tf.tensor(X, [parseInt(q_train, 10), 4]);
+		const x = tf.tensor(X, [parseInt(q_train, 10) - 1, 4]);
 		const y = tf.tensor(Y);
-		console.log('dbg')
+		//console.log('dbg')
 
-		console.log("Tensores:");
-		console.log('x:', x.print(), '    y:', y.print())
+		//console.log("Tensores:");
+		//console.log('x:', x.print(), '    y:', y.print())
 
 		for (let i = 1; i <= 1000; i++) {
 			let train = await model.fit(x, y);
-			taxa = parseFloat(train.history.loss[0]).toFixed(4);
+      taxa = parseFloat(train.history.loss[0]).toFixed(4);
+      //taxa = train.history.loss[0];
 			if (i % 100 == 0) console.log('taxa de erro: ', taxa);
 			if (taxa <= 0.001) i = 1001;
 		}
@@ -184,4 +193,4 @@ async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_t
 // FRONTEND --------------------------------------------------------------------------------
 
 
-get_history('R_50', 150, 'ticks')
+get_history('R_50', 20, 'ticks')
