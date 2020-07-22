@@ -16,12 +16,17 @@ for(let l=1; l<linhas.length; l++) {
 
 	const celulas2 = linhas[l].split(';');
 
+	
+	console.log('celula1: ', celulas1);
+	console.log('celula2: ', celulas2);
 	const FechamentoX = Number(celulas1[1]);
 	const AberturaX   = Number(celulas1[2]);
 	const MaximaX     = Number(celulas1[3]);
 	const MinimaX     = Number(celulas1[4]);
 
 	X.push([FechamentoX, AberturaX, MaximaX, MinimaX]);
+
+	//console.log(X);
 
 	const FechamentoY = Number(celulas2[1]);
 	const AberturaY   = Number(celulas2[2]);
@@ -32,6 +37,8 @@ for(let l=1; l<linhas.length; l++) {
 
 	qtdLinhas++;
 }
+//console.log(celulas1);
+//console.log(celulas2);
 
 const model = tf.sequential();
 const inputLayer = tf.layers.dense({units: 4, inputShape: [4]});

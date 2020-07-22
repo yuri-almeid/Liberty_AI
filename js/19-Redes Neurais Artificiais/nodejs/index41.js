@@ -5,7 +5,7 @@ const model = tf.sequential();
 let arrUltimo = [];
 
 async function treino() {
-	let arquivo = fs.readFileSync('cotacao-do-euro.csv', {encoding: 'utf8'});
+	let arquivo = fs.readFileSync('cotacao-do-euro.csv');
 	arquivo = arquivo.toString().trim();
 
 	const linhas = arquivo.split('\r\n');
@@ -129,4 +129,4 @@ function ordenaDados(array) {
 	return cotacoes;
 }
 
-predicao(50);
+predicao(5);
