@@ -1,0 +1,10 @@
+const inputLayer = tf.layers.dense({ units: 1, inputShape: [2], activation: 'linear' }); // Reccebe montagem da camada de entrada com a estrutura densa
+	// units - quantidade de elementos de resposta
+	// inputShape - Quantidade de colunas da camada
+	// activation - funcao de ativacao (linear, tanh, sigmoid, softmax, softplus, relu)
+
+	model.add(inputLayer); // Adiciona a camada ao modelo
+	model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' }); // Compila o modelo
+	// optmizer - otimizador (sgd, adagrad, adadelta, adam, adamax, rmsprop) pode utilizar aplicando taxa de aprendizagem tf.train.sgd(.01)
+	// loss - funcao de perda  tem que usar objeto tf.losses. para outras que nao seja do erro quadratico medio
+	// 		- (meanSquaredError, absoluteDifference, cosineDistance, hingeLoss, huberLoss, logLoss, sigmoidCrossEntropy, softmaxCrossEntropy)
