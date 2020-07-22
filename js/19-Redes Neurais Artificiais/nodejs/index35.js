@@ -17,9 +17,10 @@ async function NeuralNetwork() {
 		for(let i=1; i<=1000; i++) {
 			let train = await model.fit(x, y);
 			taxa = parseFloat(train.history.loss[0]).toFixed(4);
-			if(i%10==0)
+			if(i%5==0)
 				console.log(`taxa de erro: ${taxa}`);
-		}
+		}	if(taxa == 0) i = 1001;
+
 	}
 
 	let output = model.predict(z).round();
