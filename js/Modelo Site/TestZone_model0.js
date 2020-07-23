@@ -1,5 +1,12 @@
 const tf = require('@tensorflow/tfjs');
+const fs = require('fs');
 const WebSocket = require('ws');
+
+let X = []; // Matriz das variáveis independentes
+let Y = []; // Matriz das variáveis dependentes
+
+let arrInput = [];
+let q_train;
 
 var history;
 
@@ -90,13 +97,11 @@ function AI_preprocessing_tk(data, epochs_) {
 	// Definindo parte dos dados que será usada para treino e parte dos dados que será usada para teste
 	let training_set = 0.8; // Parcela de treino
 	let test_set = 1 - training_set; // Parcela de teste
-	let q_train = parseInt(training_set * epochs_, 10);
+	q_train = parseInt(training_set * epochs_, 10);
 	let q_test = epochs_ - q_train;
 	//console.log(q_test,q_train);
 
 	// Definindo matrizes dependentes e independentes
-	let X = []; // Matriz das variáveis independentes
-	let Y = []; // Matriz das variáveis dependentes
 	let full_train = []; // Array com todos os dados do treinamento
 	let price_train = []; // Array com preço para treinamento
 	let epoch_train = []; // Array com epoca para treinamento
@@ -114,79 +119,55 @@ function AI_preprocessing_tk(data, epochs_) {
 			epoch_train[i] = epoch[i];
 			parity_train[i] = parity[i];
 			next_train[i] = next[i];
-			X[i] = [epoch_train[i], price_train[i], parity_train[i]];
-			Y[i] = [next_train[i]];
+			full_train[i] = [[epoch_train[i], price_train[i], parity_train[i], next_train[i]]]
 		} else {
 			price_test[j] = price[i];
 			epoch_test[j] = epoch[i];
 			parity_test[j] = parity[i];
-			next_test[j] = next[i];
+      next_test[j] = next[i];
+      console.log("TESTE ", j, ': ',epoch_test[j] ,price_test[j] ,parity_test[j], next_test[j])
 			j = j + 1;
 		}
 	}
 
+	// Testando metodo de separação de variaveis focado em previsão
 
-	// Definindo de fato as matrizes
-	//X.push(epoch_train, price_train);
-	//Y.push(parity_train);
-	//console.log('\n');
-	console.log('Pre-processamento de dados completo')
-	//console.log('Variáveis Independentes: ', X);
-  //console.log('Variáveis Dependentes: ', Y);
+	for (i = 1; i < q_train; i++) {
+		X.push(full_train[i - 1]);
+		Y.push(full_train[i]);
+  }
   
-  //console.log(X.length);
-  //console.log(Y.length);
-  AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_test);
-  
-  
-
+  arrInput = [[epoch_test[j], price_test[j], parity_test[j], next_test[j]]];
 
 }
-
-async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_test) {
-	//console.log('\n');
-	console.log('---------TREINAMENTO DA REDE NEURAL ARTIFICIAL ---------')
-	let model = null;
-	let taxa = 1;
-	console.log('Treinamento Iniciado...')
-	while (taxa > 0.1) {
-		model = tf.sequential(); // Modelo de fluxo de dados da rede
-		//console.log('dbg')
-		const inputLayer = tf.layers.dense({ units: 1, inputShape: [3], activation: 'linear', useBias: true }); // Camada de entrada
-		const hiddenLayer = tf.layers.dense({ units: 3, inputShape: [1], activation: 'linear', useBias: true }); // Camada oculta
-		//console.log('dbg')
-		model.add(inputLayer);
-		model.add(hiddenLayer);
-		model.compile({ loss: 'meanSquaredError', optimizer: tf.train.sgd(.5) }); // 
-		//console.log('dbg')
-
-		const x = tf.tensor(X, [parseInt(q_train, 10), 3]);
-		//console.log('dbg')
-		const y = tf.tensor(Y);
-		//console.log('dbg')
-
-		//console.log("Tensores:");
-		//console.log('x:', x.print(), '    y:', y.print())
-
-		for (let i = 1; i <= 1000; i++) {
-			let train = await model.fit(x, y);
-      taxa = parseFloat(train.history.loss[0]).toFixed(4);
-      //taxa = train.history.loss[0];
-			if (i % 100 == 0) console.log('taxa de erro: ', taxa);
-			if (taxa <= 0.001) i = 1001;
-		}
-	}
-
-	console.log('\n');
-	model.weights.forEach(w => {
-		console.log(`nome do peso: ${w.name} - dimensionalidade: ${w.shape}`);
-	});
-	console.log('\n');
-	
-
-}
-
-// FRONTEND --------------------------------------------------------------------------------
-
 
 get_history('R_50', 150, 'ticks')
+
+
+const model = tf.sequential();
+const inputLayer = tf.layers.dense({units: 4, inputShape: [4]});
+model.add(inputLayer);
+
+const learningRate = 0.00001;
+const optimizer = tf.train.sgd(learningRate);
+
+model.compile({loss: 'meanSquaredError', optimizer: optimizer});
+
+const x = tf.tensor(X, [q_train, 4]);
+const y = tf.tensor(Y);
+
+ // 09.05.2019
+//const arrInput = [[26.68, 26.87, 26.92, 26.42]]; // 10.05.2019
+const input = tf.tensor(arrInput, [1, 4]);
+
+model.fit(x, y, {epochs: 500}).then(() => {
+	let output = model.predict(input).dataSync();
+	output = ordenaDados(output);
+
+	console.log(`PREÇO DAS COTAÇOES`);
+	console.log(`Fechamento: R$ ${Number(output[0]).toFixed(2)}`);
+	console.log(`Abertura:   R$ ${Number(output[1]).toFixed(2)}`);
+	console.log(`Máxima:     R$ ${Number(output[2]).toFixed(2)}`);
+	console.log(`Mínima:     R$ ${Number(output[3]).toFixed(2)}`);
+});
+
