@@ -152,12 +152,14 @@ async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_t
 	while (taxa > 0.1) {
 		model = tf.sequential(); // Modelo de fluxo de dados da rede
 		//console.log('dbg')
-		const inputLayer = tf.layers.dense({ units: 1, inputShape: [3], activation: 'linear', useBias: true }); // Camada de entrada
-		const hiddenLayer = tf.layers.dense({ units: 3, inputShape: [1], activation: 'linear', useBias: true }); // Camada oculta
+		const input = tf.input({shape: [2]});
+		const dense1 = tf.layers.dense({units: 2, activation: 'tanh'}).apply(input);
+		const dense2 = tf.layers.dense({units: 1, activation: 'sigmoid'}).apply(dense1);
+		model = tf.model({inputs: input, outputs: dense2});
 		//console.log('dbg')
-		model.add(inputLayer);
-		model.add(hiddenLayer);
-		model.compile({ loss: 'meanSquaredError', optimizer: tf.train.sgd(.5) }); // 
+		//model.add(inputLayer);
+		//model.add(hiddenLayer);
+		model.compile({ loss: 'meanSquaredError', optimizer: tf.train.rmsprop(.05) }); // 
 		//console.log('dbg')
 
 		const x = tf.tensor(X, [parseInt(q_train, 10), 3]);
@@ -168,6 +170,8 @@ async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_t
 		//console.log("Tensores:");
 		//console.log('x:', x.print(), '    y:', y.print())
 
+		/*
+
 		for (let i = 1; i <= 1000; i++) {
 			let train = await model.fit(x, y);
       taxa = parseFloat(train.history.loss[0]).toFixed(4);
@@ -176,11 +180,24 @@ async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_t
 			if (taxa <= 0.001) i = 1001;
 		}
 	}
+	*/
+	model.fit(x, y, {epochs: 500}).then(() => {
+		let output = model.predict(input).dataSync();
+		output.print();
+		output = ordenaDados(output);
+	
+		console.log(`PREÇO DAS COTAÇOES`);
+		console.log(`Fechamento: R$ ${Number(output[0]).toFixed(2)}`);
+		console.log(`Abertura:   R$ ${Number(output[1]).toFixed(2)}`);
+		console.log(`Máxima:     R$ ${Number(output[2]).toFixed(2)}`);
+		console.log(`Mínima:     R$ ${Number(output[3]).toFixed(2)}`);
+	});
+	
 
 	console.log('\n');
-	model.weights.forEach(w => {
-		console.log(`nome do peso: ${w.name} - dimensionalidade: ${w.shape}`);
-	});
+	//model.weights.forEach(w => {
+		//console.log(`nome do peso: ${w.name} - dimensionalidade: ${w.shape}`);
+	//});
 	console.log('\n');
 	
 
@@ -189,4 +206,34 @@ async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_t
 // FRONTEND --------------------------------------------------------------------------------
 
 
-get_history('R_50', 150, 'ticks')
+get_history('R_50', 150, 'ticks');
+
+function ordenaDados(array) {
+	function sortNumber(a, b) {
+		return (a - b);
+	}
+
+	let fechamento = array[0];
+	let abertura   = array[1];
+	let maxima     = array[2];
+	let minima     = array[3];
+
+	let cotacoes = [fechamento, abertura, maxima, minima];
+	cotacoes = cotacoes.sort(sortNumber);
+
+	let menor = cotacoes[0];
+	let maior = cotacoes[3];
+
+	if(fechamento<minima) fechamento = minima;
+	if(abertura<minima) abertura = minima;
+	if(maxima<minima) maxima = minima;
+	minima = menor;
+
+	if(fechamento>maxima) fechamento = maxima;
+	if(abertura>maxima) abertura = maxima;
+	if(minima>maxima) minima = maxima;
+	maxima = maior;
+
+	cotacoes = [fechamento, abertura, maxima, minima];
+	return cotacoes;
+}

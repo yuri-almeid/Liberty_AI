@@ -53,7 +53,7 @@ const x = tf.tensor(X, [qtdLinhas, 4]);
 const y = tf.tensor(Y);
 
 const arrInput = [[26.83, 27.10, 27.12, 26.64]]; // 09.05.2019
-//const arrInput = [[26.68, 26.87, 26.92, 26.42]]; // 10.05.2019
+console.log([26.68, 26.87, 26.92, 26.42]); // 10.05.2019
 const input = tf.tensor(arrInput, [1, 4]);
 
 model.fit(x, y, {epochs: 500}).then(() => {

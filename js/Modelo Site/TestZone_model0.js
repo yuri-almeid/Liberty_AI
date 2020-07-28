@@ -119,55 +119,102 @@ function AI_preprocessing_tk(data, epochs_) {
 			epoch_train[i] = epoch[i];
 			parity_train[i] = parity[i];
 			next_train[i] = next[i];
-			full_train[i] = [[epoch_train[i], price_train[i], parity_train[i], next_train[i]]]
+			full_train[i] = [epoch_train[i], price_train[i], parity_train[i], next_train[i]]
 		} else {
 			price_test[j] = price[i];
 			epoch_test[j] = epoch[i];
 			parity_test[j] = parity[i];
       next_test[j] = next[i];
-      console.log("TESTE ", j, ': ',epoch_test[j] ,price_test[j] ,parity_test[j], next_test[j])
+      //console.log("TESTE ", j, ': ',epoch_test[j] ,price_test[j] ,parity_test[j], next_test[j])
 			j = j + 1;
 		}
 	}
 
 	// Testando metodo de separação de variaveis focado em previsão
 
-	for (i = 1; i < q_train; i++) {
-		X.push(full_train[i - 1]);
-		Y.push(full_train[i]);
+	for (i = 0; i < q_train; i++) {
+		X.push(full_train[i]);
+		Y.push(full_train[i + 1]);
   }
+  Y.pop();
+  Y.push([epoch_test[0], price_test[0], parity_test[0], next_test[0]])
   
-  arrInput = [[epoch_test[j], price_test[j], parity_test[j], next_test[j]]];
+  
+  arrInput = [epoch_test[j], price_test[j], parity_test[j], next_test[j]];
+  console.log("Fim do preprocessamento de dados")
+  //return X
+  main();
+}
+
+
+async function main(){
+
+	let model = null;
+
+  console.log(X);
+	console.log(Y);
+	
+	
+	const x = tf.tensor(X, [q_train, 4]);
+	//console.log("ok");
+	const y = tf.tensor(Y); 
+
+	// 09.05.2019
+	//const arrInput = [[26.68, 26.87, 26.92, 26.42]]; // 10.05.2019
+	const input = tf.tensor(arrInput, [1, 4]);  
+	
+	let taxa = 1;
+	while (taxa > 0.1) {
+		/*
+		model = tf.sequential();
+		const inputLayer = tf.layers.dense({units: 16, inputShape: [4], activation: 'softmax'});
+		const hiddenLayer = tf.layers.dense({units: 4, inputShape: [16], activation: 'softplus'});
+		model.add(inputLayer);
+		model.add(hiddenLayer);
+		const learningRate = 0.005;
+		const optimizer = tf.train.sgd(learningRate); 
+
+		//console.log("ok");
+		model.compile({loss:tf.losses.absoluteDifference , optimizer: optimizer});  
+
+
+		for(let i=1; i<=1000; i++) {
+			let train = await model.fit(x, y);
+			taxa = parseFloat(train.history.loss[0]).toFixed(4);
+			if (i % 100 == 0) console.log('taxa de erro: ', taxa);
+			if (taxa <= 0.001) i = 1001;
+		}
+	}
+	
+
+
+	console.log("shit");
+  let output = model.predict(input).round();
+	//output.print;
+	*/
+	model = tf.sequential({
+		layers: [
+			tf.layers.dense({units: 8, inputShape: [4], activation: 'softmax'}),
+			tf.layers.dense({units: 4, inputShape: [8], activation: 'softplus'}),
+			//tf.layers.dense({units: 8, inputShape: [4], activation: 'softplus'}),
+		]
+	});
+	model.compile({loss: tf.losses.meanSquaredError, optimizer: tf.train.adamax(0.01)});
+
+	for(let i=1; i<=1000; i++) {
+		let train = await model.fit(x, y);
+		taxa = parseFloat(train.history.loss[0]).toFixed(4);
+		if (i % 10 == 0) console.log('taxa de erro: ', taxa);
+			if (taxa <= 0.001) i = 1001;
+	}
+}
+
+let output = model.predict(input).round();
+output.print();
 
 }
 
-get_history('R_50', 150, 'ticks')
+get_history('R_50', 500, 'ticks');
 
 
-const model = tf.sequential();
-const inputLayer = tf.layers.dense({units: 4, inputShape: [4]});
-model.add(inputLayer);
-
-const learningRate = 0.00001;
-const optimizer = tf.train.sgd(learningRate);
-
-model.compile({loss: 'meanSquaredError', optimizer: optimizer});
-
-const x = tf.tensor(X, [q_train, 4]);
-const y = tf.tensor(Y);
-
- // 09.05.2019
-//const arrInput = [[26.68, 26.87, 26.92, 26.42]]; // 10.05.2019
-const input = tf.tensor(arrInput, [1, 4]);
-
-model.fit(x, y, {epochs: 500}).then(() => {
-	let output = model.predict(input).dataSync();
-	output = ordenaDados(output);
-
-	console.log(`PREÇO DAS COTAÇOES`);
-	console.log(`Fechamento: R$ ${Number(output[0]).toFixed(2)}`);
-	console.log(`Abertura:   R$ ${Number(output[1]).toFixed(2)}`);
-	console.log(`Máxima:     R$ ${Number(output[2]).toFixed(2)}`);
-	console.log(`Mínima:     R$ ${Number(output[3]).toFixed(2)}`);
-});
 
