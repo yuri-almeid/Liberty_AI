@@ -39,6 +39,8 @@ for(let l=1; l<linhas.length; l++) {
 }
 //console.log(celulas1);
 //console.log(celulas2);
+console.log(X);
+console.log(Y);
 
 const model = tf.sequential();
 const inputLayer = tf.layers.dense({units: 4, inputShape: [4]});
