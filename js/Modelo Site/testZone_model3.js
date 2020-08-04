@@ -12,6 +12,36 @@ function epochToJsDate(ts) {
 	return new Date(ts * 1000);
 }
 
+function ordenaDados(array) {
+	function sortNumber(a, b) {
+		return (a - b);
+	}
+
+	let fechamento = array[0];
+	let abertura   = array[1];
+	let maxima     = array[2];
+	let minima     = array[3];
+
+	let cotacoes = [fechamento, abertura, maxima, minima];
+	cotacoes = cotacoes.sort(sortNumber);
+
+	let menor = cotacoes[0];
+	let maior = cotacoes[3];
+
+	if(fechamento<minima) fechamento = minima;
+	if(abertura<minima) abertura = minima;
+	if(maxima<minima) maxima = minima;
+	minima = menor;
+
+	if(fechamento>maxima) fechamento = maxima;
+	if(abertura>maxima) abertura = maxima;
+	if(minima>maxima) minima = maxima;
+	maxima = maior;
+
+	cotacoes = [fechamento, abertura, maxima, minima];
+	return cotacoes;
+}
+
 function get_history(sym, periodo, stl) {
 	var ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
 	//console.log(periodo);
@@ -61,25 +91,68 @@ function preprocessing(data, q_data){
     let X_epoch, X_open, X_close, X_min, X_max;
     let Y_epoch, Y_open, Y_close, Y_min, Y_max;
 
-    X_epoch = data[i].epoch;
-    X_open = data[i].open;
-    X_close = data[i].close;
-    X_min = data[i].low;
-    X_max = data[i].high;
+    parseFloat();
+
+    X_epoch = parseFloat(data[i].epoch);
+    X_open = parseFloat(data[i].open);
+    X_close = parseFloat(data[i].close);
+    X_min = parseFloat(data[i].low);
+    X_max = parseFloat(data[i].high);
 
     X.push([X_close, X_open, X_max, X_min]);
 
-    Y_epoch = data[i + 1].epoch;
-    Y_open = data[i + 1].open;
-    Y_close = data[i + 1].close;
-    Y_min = data[i + 1].low;
-    Y_max = data[i + 1].high;
+    Y_epoch = parseFloat(data[i + 1].epoch);
+    Y_open = parseFloat(data[i + 1].open);
+    Y_close = parseFloat(data[i + 1].close);
+    Y_min = parseFloat(data[i + 1].low);
+    Y_max = parseFloat(data[i + 1].high);
 
     Y.push([Y_close, Y_open, Y_max, Y_min]);
   }
   console.log('Fim do Preprocessamento de dados.')
+
+  
+  console.log(typeof X);
+  console.log(X[0].isArray);
+  console.log(typeof X[0][1]);
+  //console.log(X.length);
+  //console.log(Y.length);
   nnModel2(X, Y, q_train);
     
+}
+
+function nnModel0(X, Y, q){
+  console.log("\n ----------------------- INICIO DA RNA0 -----------------------");
+  const model = tf.sequential();
+  const inputLayer = tf.layers.dense({units: 4, inputShape: [4], optimizer: 'softmax'});
+  model.add(inputLayer);
+
+  const learningRate = 0.00001;
+  const optimizer = tf.train.sgd(learningRate);
+
+  model.summary();
+
+  model.compile({loss: 'meanSquaredError', optimizer: optimizer});
+
+  const x = tf.tensor(X, [q, 4]);
+  const y = tf.tensor(Y);
+
+  const arrInput = [[2938.29, 2944.24, 2944.24, 2934.88]]; // 09.05.2019
+  console.log(arrInput); // 10.05.2019
+  console.log(x);
+  x.print();
+  const input = tf.tensor(arrInput, [1, 4]);
+
+  model.fit(x, y, {epochs: 500}).then(() => {
+    let output = model.predict(input).dataSync();
+    output = ordenaDados(output);
+
+    console.log(`PREÇO DAS COTAÇOES`);
+    console.log(`Fechamento: R$ ${Number(output[0]).toFixed(2)}`);
+    console.log(`Abertura:   R$ ${Number(output[1]).toFixed(2)}`);
+    console.log(`Máxima:     R$ ${Number(output[2]).toFixed(2)}`);
+    console.log(`Mínima:     R$ ${Number(output[3]).toFixed(2)}`);
+  });
 }
 
 async function nnModel1(X, Y, q){
@@ -92,12 +165,13 @@ async function nnModel1(X, Y, q){
   let taxa = 1;
 	while (taxa > 0.1) {
 		model = tf.sequential();
-		const inputLayer = tf.layers.dense({units: 8, inputShape: [4], optimizer: 'linear'});
-    const hiddenLayer = tf.layers.dense({units: 4, inputShape: [8], optimizer: 'linear'});
+		const inputLayer = tf.layers.dense({units: 8, inputShape: [4], optimizer: 'softmax'});
+    const hiddenLayer = tf.layers.dense({units: 4, inputShape: [8], optimizer: 'softplus'});
     model.add(inputLayer);
     model.add(hiddenLayer);
+    console.log("\nSumário da rede:");
     model.summary();
-    model.compile({loss: tf.losses.meanSquaredError, optimizer: tf.train.sgd(.0005)});
+    model.compile({loss: tf.losses.meanSquaredError, optimizer: tf.train.sgd(.005)});
 
 		for (let i = 1; i <= 1000; i++) {
 			let train = await model.fit(x, y);
@@ -125,16 +199,17 @@ async function nnModel1(X, Y, q){
 async function nnModel2(X, Y, q){
   console.log("\n ----------------------- INICIO DA RNR -----------------------");
   let model = tf.sequential();
-  const x = tf.tensor(X);
+  const x = tf.tensor(X, [q,4]);
 	const y = tf.tensor(Y);
-  const rnn = tf.layers.simpleRNN({units: 1, returnSequences: true, activation: 'linear'});
-	const inputLayer = tf.input({shape: [X[0].length, 1]});
-	rnn.apply(inputLayer);
+  const rnn = tf.layers.simpleRNN({inputShape: [1, 4], units: 1, returnSequences: true, activation: 'softmax'});
+	//const inputLayer = tf.input({shape: [1, 4]});
+	//rnn.apply(inputLayer);
 
   model.add(rnn);
   console.log("\nSumário da rede:");
   model.summary();
   let taxa;
+  console.log("x");
 	model.compile({loss: 'meanSquaredError', optimizer: tf.train.sgd(.001)});
 	for(let i=1; i<=20000; i++) {
     let train = await model.fit(x, y);

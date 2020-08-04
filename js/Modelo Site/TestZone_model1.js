@@ -157,8 +157,8 @@ async function AI_ANN(X, Y, q_train, epoch_test, price_test, parity_test, next_t
 	while (taxa > 0.1) {
 		model = tf.sequential(); // Modelo de fluxo de dados da rede
 		//console.log('dbg')
-		const inputLayer = tf.layers.dense({ units: 16, inputShape: [4], activation: 'linear', useBias: true }); // Camada de entrada
-		const hiddenLayer = tf.layers.dense({ units: 4, inputShape: [16], activation: 'linear', useBias: true }); // Camada oculta
+		const inputLayer = tf.layers.dense({ units: 8, inputShape: [4], activation: 'linear', useBias: true }); // Camada de entrada
+		const hiddenLayer = tf.layers.dense({ units: 4, inputShape: [8], activation: 'linear', useBias: true }); // Camada oculta
 		//console.log('dbg')
 		model.add(inputLayer);
 		model.add(hiddenLayer);

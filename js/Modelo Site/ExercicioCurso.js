@@ -58,6 +58,12 @@ const arrInput = [[26.83, 27.10, 27.12, 26.64]]; // 09.05.2019
 console.log([26.68, 26.87, 26.92, 26.42]); // 10.05.2019
 const input = tf.tensor(arrInput, [1, 4]);
 
+console.log(x);
+
+x.print();
+
+model.summary();
+
 model.fit(x, y, {epochs: 500}).then(() => {
 	let output = model.predict(input).dataSync();
 	output = ordenaDados(output);

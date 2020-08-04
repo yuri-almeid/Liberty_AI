@@ -114,7 +114,7 @@ function AI_preprocessing_tk(data, epochs_) {
 			epoch_train[i] = epoch[i];
 			parity_train[i] = parity[i];
 			next_train[i] = next[i];
-			X[i] = [epoch_train[i], price_train[i], parity_train[i]];
+			X[i] = [epoch_train[i], price_train[i]];
 			Y[i] = [next_train[i]];
 		} else {
 			price_test[j] = price[i];
