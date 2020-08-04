@@ -1,13 +1,13 @@
-import { sequential, tensor, layers, input as _input, train } from '@tensorflow/tfjs';
-import { readFileSync } from 'fs';
+const tf = require('@tensorflow/tfjs');
+const fs = require('fs');
 
-let model = sequential();
+let model = tf.sequential();
 
 async function treino() {
 	let X = [];
 	let Y = [];
 
-	let arquivo1 = readFileSync('bitcoin01.csv', {encoding: 'utf8'});
+	let arquivo1 = fs.readFileSync('bitcoin01.csv', {encoding: 'utf8'});
 	arquivo1 = arquivo1.toString().trim();
 
 	const linhas1 = arquivo1.split('\r\n');
@@ -23,7 +23,7 @@ async function treino() {
 		X.push([[Fechamento], [Abertura], [Maxima], [Minima]]);
 	}
 
-	let arquivo2 = readFileSync('bitcoin02.csv', {encoding: 'utf8'});
+	let arquivo2 = fs.readFileSync('bitcoin02.csv', {encoding: 'utf8'});
 	arquivo2 = arquivo2.toString().trim();
 
 	const linhas2 = arquivo2.split('\r\n');
@@ -39,10 +39,10 @@ async function treino() {
 		Y.push([[Fechamento], [Abertura], [Maxima], [Minima]]);
 	}
 
-	const x = tensor(X);
-	const y = tensor(Y);
+	const x = tf.tensor(X);
+	const y = tf.tensor(Y);
 
-	const rnn = layers.simpleRNN({units: 1, returnSequences: true, activation: 'linear'});
+	const rnn = tf.layers.simpleRNN({units: 1, returnSequences: true, activation: 'linear'});
 	const inputLayer = _input({shape: [X[0].length, 1]});
 	rnn.apply(inputLayer);
 
