@@ -161,6 +161,8 @@ async function onClickTrainModel(){
     return inp_f['set'].map(function(val) { return val['price']; })
   });
   let outputs = sma_vec.map(function(outp_f) { return outp_f['avg']; });
+  console.log("AQUI EM BAIXO VAI OS INPUTS")
+  console.log(inputs)
 
   trainingsize = parseInt(document.getElementById("input_trainingsize").value);
   let n_epochs = parseInt(document.getElementById("input_epochs").value);
@@ -187,8 +189,8 @@ async function onClickTrainModel(){
     Plotly.newPlot( graph_plot, [{x: Array.from({length: epoch_loss.length}, (v, k) => k+1), y: epoch_loss, name: "Loss" }], { margin: { t: 0 } } );
   };
 
-  console.log('train X', inputs)
-  console.log('train Y', outputs)
+  console.log('train X', inputs);
+  console.log('train Y', outputs);
   result = await trainModel(inputs, outputs, window_size, n_epochs, learningrate, n_hiddenlayers, callback);
 
   let logHtml = document.getElementById("div_traininglog").innerHTML;
@@ -208,9 +210,13 @@ function onClickValidate() {
   $("#load_validating").show();
   $("#btn_validation").hide();
 
+  
+  
   let inputs = sma_vec.map(function(inp_f) {
    return inp_f['set'].map(function (val) { return val['price']; });
   });
+  console.log("AQUI")
+  console.log(inputs);
 
   // validate on training
   let val_train_x = inputs.slice(0, Math.floor(trainingsize / 100 * inputs.length));

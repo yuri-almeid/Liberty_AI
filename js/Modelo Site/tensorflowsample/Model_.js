@@ -2,8 +2,9 @@
 // Definindo variáveis gobais
 const window_size = 4;
 const n_layers = 4;
-const n_epochs = 15;
+const n_epochs = 2;
 const learning_rate = 0.01;
+const training_size = 80; // %
 
 const input_layer_shape  = window_size;
 const input_layer_neurons = 100;
@@ -15,7 +16,14 @@ const rnn_batch_size = window_size;
 const output_layer_shape = rnn_output_neurons;
 const output_layer_neurons = 1;
 
-
+function showData(data){
+  let newData = [];
+  for (i = 0; i < 10; i++){
+    newData[i] = data[i];
+  }
+  console.log(newData);
+  console.log(data.length);
+}
 
 function getHistory(sym, periodo, stl) {
   console.log('------------- COLETA DE DADOS -------------');
@@ -47,10 +55,10 @@ function getHistory(sym, periodo, stl) {
       dataPreprocessing(history);
 
 		} else { console.log('Falha na aquisição dos dados!') }
-	};
+	};  
 }
 
-function dataPreprocessing(data_raw){
+async function dataPreprocessing(data_raw){
   console.log('--------- PRE-PROCESSAMENTO DOS DADOS ---------');
   // Criação das Matrizes X e Y
   let X = [];
@@ -94,9 +102,9 @@ function dataPreprocessing(data_raw){
     Y.push(parseFloat(aux.toFixed(5)));
   }
   console.log("Matriz X (input): ")
-  console.log(X);
+  showData(X);
   console.log("Matriz Y (label): ")
-  console.log(Y);
+  showData(Y);
 
   // Plot da média móvel -----
   // Cria Json
@@ -126,9 +134,7 @@ function dataPreprocessing(data_raw){
   console.log("Preprocessamento dos dados concluido.");
   
   // Chama funcao principal
-  const model = await aiModel(X, Y);
-
-  console.log('Modelo treinado com sucesso');
+  main(X,Y,epoch_);
 
 }
 
@@ -182,6 +188,92 @@ async function aiModel(X, Y){
 
   return { model: model, stats: hist };  
   
+}
+
+async function validate(X, Y, model, epochs){
+
+  // Validade model
+  console.log('--------- VALIDACAO DO MODELO ---------');
+  let val_train_x = X.slice(0, Math.floor(training_size / 100 * X.length));
+  console.log("Banco de treinamento (inputs):");
+  showData(val_train_x);
+  let val_train_y = makePredictions(val_train_x, model);
+  console.log("Banco de treinamento (outputs):");
+  showData(val_train_y);
+
+  // validate on unseen
+  let val_unseen_x = X.slice(Math.floor(training_size / 100 * X.length), X.length);
+  console.log("Banco de teste (inputs):");
+  showData(val_unseen_x);
+  let val_unseen_y = makePredictions(val_unseen_x, model);
+  console.log("Banco de teste (outputs):");
+  showData(val_unseen_y);
+
+
+  
+  // Plot da validação -----
+  // Cria Json dos dados de treinamento
+  let epoch_trainY = epochs.slice(0, Math.floor(training_size / 100 * X.length));
+  let trainY_json = [];
+  for (i = 0; i < epoch_trainY.length; i++){
+    trainY_json[i] = {
+      time : epoch_trainY[i],
+      Y : val_train_y[i]
+    }
+  }
+  const train_values = Y_json.map(d => ({
+    x: d.time, y: d.Y,
+  }));
+
+  // Cria Json dos dados de teste
+  let epoch_validY = epochs.slice(Math.floor(training_size / 100 * X.length), X.length);
+  let validY_json = [];
+  for (i = 0; i < epoch_validY.length; i++){
+    validY_json[i] = {
+      time : epoch_validY[i],
+      Y : val_unseen_y[i]
+    }
+  }
+  const valid_values = Y_json.map(d => ({
+    x: d.time, y: d.Y,
+  }));
+
+  
+
+
+  tfvis.render.linechart(
+    {name: 'Media movel'}, 
+    {values: [values, sma], series: ['Preco', 'SMA']}, 
+    {
+      zoomToFit: true,
+      xLabel: 'Data',
+      yLabel: 'Fechamento',
+      height: 300,
+      width: 500
+    }
+  );
+
+
+
+}
+
+function makePredictions(X, model)
+{
+  const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10);
+  return Array.from(predictedResults.dataSync());
+}
+
+async function main(X, Y, epochs){
+
+  // Chama função que cria e treina o modelo
+  const result = await aiModel(X, Y);
+  console.log('Modelo treinado com sucesso');
+  console.log(result);
+
+  // Chama função de validação do modelo
+  validate(X, Y, epochs, result.model);
+
+
 }
 
 
