@@ -1,21 +1,27 @@
 
-// Definindo variáveis gobais
-const window_size = 4;
-const n_layers = 4;
-const n_epochs = 2;
-const learning_rate = 0.01;
-const training_size = 80; // %
+// Definindo variáveis gobais ------------------------------------------------------------
+// Variáveis de configuração (Pode mexer)
+const symbol_ = 'frxAUDCAD';        // Ativo
+const data_size = 600;              // Quantidade de dados
+const window_size = 4;              // Tamanho da média móvel
+const n_layers = 8;                 // Número de camadas ocultas
+const n_epochs = 50;                // Número de épocas de treinamento
+const learning_rate = 0.02;         // Taxa de aprendizado
+const training_size = 85;           // Tamanho da parcela de treino em %
 
-const input_layer_shape  = window_size;
-const input_layer_neurons = 100;
-const rnn_input_layer_features = 10;
-const rnn_input_layer_timesteps = input_layer_neurons / rnn_input_layer_features;
-const rnn_input_shape  = [rnn_input_layer_features, rnn_input_layer_timesteps];
-const rnn_output_neurons = 20;
+// Variáveis de dimensionamento (Não pode mexer)
+const input_layer_shape  = window_size;                                               // Tamanho da camada de entrada
+const input_layer_neurons = 100;                                                      // Quantidade de neurons da entrada
+const rnn_input_layer_features = 10;                                                  // Quantidade de recurso da rede neural recursiva
+const rnn_input_layer_timesteps = input_layer_neurons / rnn_input_layer_features;     // Quantidade de "Passos de tempo" da RNR
+const rnn_input_shape  = [rnn_input_layer_features, rnn_input_layer_timesteps];       // Tamanho da camada de entrada da RNR
+const rnn_output_neurons = 20;                                                        // Quantidade de neurônios da saída da RNR
 const rnn_batch_size = window_size;
 const output_layer_shape = rnn_output_neurons;
 const output_layer_neurons = 1;
 
+
+// Função usada para mostrar apenas 10 valores do banco e mostrar o seu tamanho
 function showData(data){
   let newData = [];
   for (i = 0; i < 10; i++){
@@ -25,6 +31,7 @@ function showData(data){
   console.log(data.length);
 }
 
+// Função que faz conexão com a corretora e coleta o histórico do ativo
 function getHistory(sym, periodo, stl) {
   console.log('------------- COLETA DE DADOS -------------');
   let history;
@@ -58,6 +65,7 @@ function getHistory(sym, periodo, stl) {
 	};  
 }
 
+// Função do preprocessamento dos dados
 async function dataPreprocessing(data_raw){
   console.log('--------- PRE-PROCESSAMENTO DOS DADOS ---------');
   // Criação das Matrizes X e Y
@@ -78,12 +86,12 @@ async function dataPreprocessing(data_raw){
     y: d.close,
   }));
   tfvis.render.linechart(
-    {name: 'Dados Brutos'},
+    {name: 'Raw Data'},
     {values}, 
     {
       zoomToFit: true,
-      xLabel: 'Data',
-      yLabel: 'Fechamento',
+      xLabel: 'Time',
+      yLabel: 'Close',
       height: 300,
       width: 500
     }
@@ -120,12 +128,12 @@ async function dataPreprocessing(data_raw){
     x: d.epoch, y: d.Y,
   }));
   tfvis.render.linechart(
-    {name: 'Media movel'}, 
+    {name: 'Simple Moving Average'}, 
     {values: [values, sma], series: ['Preco', 'SMA']}, 
     {
       zoomToFit: true,
-      xLabel: 'Data',
-      yLabel: 'Fechamento',
+      xLabel: 'Time',
+      yLabel: 'Close',
       height: 300,
       width: 500
     }
@@ -134,51 +142,63 @@ async function dataPreprocessing(data_raw){
   console.log("Preprocessamento dos dados concluido.");
   
   // Chama funcao principal
-  main(X,Y,epoch_);
+  main(X,Y,epoch_, values, sma);
 
 }
 
-
+// Funcão que cria e treina o modelo
 async function aiModel(X, Y){
   console.log('--------- CRIACAO DO MODELO ---------');
 
+  // Cria modelo
   const model = tf.sequential();
+  
+  // Cria tensores de entradas
   const x = tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10));
   const y = tf.tensor2d(Y, [Y.length, 1]).reshape([Y.length, 1]).div(tf.scalar(10));
   
+  // Adiciona ao modelo a camada de entrada e redimensiona a uma RNR
   model.add(tf.layers.dense({units: input_layer_neurons, inputShape: [input_layer_shape]}));
   model.add(tf.layers.reshape({targetShape: rnn_input_shape}));
   
+  // Cria camadas ocultas
   let lstm_cells = [];
   for (let index = 0; index < n_layers; index++) {
         lstm_cells.push(tf.layers.lstmCell({units: rnn_output_neurons}));
   }
   
+  // Adiciona camadas ocultas ao modelo
   model.add(tf.layers.rnn({
     cell: lstm_cells,
     inputShape: rnn_input_shape,
     returnSequences: false
   }));
   
+  // Cria camada de saída
   model.add(tf.layers.dense({units: output_layer_neurons, inputShape: [output_layer_shape]}));
 
-  tfvis.show.modelSummary({name: 'Sumario do Modelo'}, model);
+  // Mostra resumo do modelo
+  tfvis.show.modelSummary({name: 'Model Summary'}, model);
 
   console.log("Modelo Criado com Sucesso");
+  console.log(model);
 
   
   console.log('--------- TREINAMENTO DO MODELO ---------');
   
+  // Compila o modelo para o treinamento
   model.compile({
     optimizer: tf.train.adam(learning_rate),
     loss: 'meanSquaredError'
   });
 
+
+  // Treina o modelo
   const hist = await model.fit(x, y,
     { batchSize: rnn_batch_size, 
       epochs: n_epochs, 
       callbacks: tfvis.show.fitCallbacks(
-        { name: 'Performance de Treinamento' },
+        { name: 'Training Performance' },
         ['loss'], 
         { height: 200, 
           callbacks: ['onEpochEnd'] 
@@ -190,11 +210,11 @@ async function aiModel(X, Y){
   
 }
 
-async function validate(X, Y, model, epochs){
+async function validate(X, Y, epochs, model, real, sma){
 
   // Validade model
   console.log('--------- VALIDACAO DO MODELO ---------');
-  let val_train_x = X.slice(0, Math.floor(training_size / 100 * X.length));
+  let val_train_x = Y.slice(0, Math.floor(training_size / 100 * Y.length));
   console.log("Banco de treinamento (inputs):");
   showData(val_train_x);
   let val_train_y = makePredictions(val_train_x, model);
@@ -202,7 +222,7 @@ async function validate(X, Y, model, epochs){
   showData(val_train_y);
 
   // validate on unseen
-  let val_unseen_x = X.slice(Math.floor(training_size / 100 * X.length), X.length);
+  let val_unseen_x = Y.slice(Math.floor(training_size / 100 * Y.length), Y.length);
   console.log("Banco de teste (inputs):");
   showData(val_unseen_x);
   let val_unseen_y = makePredictions(val_unseen_x, model);
@@ -221,7 +241,7 @@ async function validate(X, Y, model, epochs){
       Y : val_train_y[i]
     }
   }
-  const train_values = Y_json.map(d => ({
+  const train_values = trainY_json.map(d => ({
     x: d.time, y: d.Y,
   }));
 
@@ -234,36 +254,35 @@ async function validate(X, Y, model, epochs){
       Y : val_unseen_y[i]
     }
   }
-  const valid_values = Y_json.map(d => ({
+  const valid_values = validY_json.map(d => ({
     x: d.time, y: d.Y,
   }));
 
-  
+
 
 
   tfvis.render.linechart(
-    {name: 'Media movel'}, 
-    {values: [values, sma], series: ['Preco', 'SMA']}, 
+    {name: 'Validation'}, 
+    {values: [real, sma, train_values, valid_values], series: ['Original', 'SMA' ,'Train Data', 'Validate Data']}, 
     {
       zoomToFit: true,
-      xLabel: 'Data',
-      yLabel: 'Fechamento',
+      xLabel: 'Time',
+      yLabel: 'Close',
       height: 300,
       width: 500
     }
   );
 
-
-
 }
 
 function makePredictions(X, model)
 {
+  console.log(model);
   const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10);
   return Array.from(predictedResults.dataSync());
 }
 
-async function main(X, Y, epochs){
+async function main(X, Y, epochs, real, sma){
 
   // Chama função que cria e treina o modelo
   const result = await aiModel(X, Y);
@@ -271,13 +290,11 @@ async function main(X, Y, epochs){
   console.log(result);
 
   // Chama função de validação do modelo
-  validate(X, Y, epochs, result.model);
-
-
+  validate(X, Y, epochs, result.model, real, sma);
 }
 
 
-getHistory('frxAUDCAD', 300, 'candles');
+getHistory(symbol_, data_size, 'candles');
 
 
 
