@@ -204,6 +204,7 @@ async function continue_(data){
   tfvis.show.modelSummary({name: 'Model Summary'}, model);
 
   // Convert the data to a form we can use for training.
+  console.log('aqui',data)
   const tensorData = convertToTensor(data);
   const {inputs, labels} = tensorData;
       

@@ -53,6 +53,8 @@ return { model: model, stats: hist };
 
 function makePredictions(X, model)
 {
+
+  console.log("predict", X);
   const predictedResults = model.predict(tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10))).mul(10);
   return Array.from(predictedResults.dataSync());
 }
