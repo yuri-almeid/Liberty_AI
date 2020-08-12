@@ -3,7 +3,7 @@
 // Variáveis de configuração (Pode mexer)
 const symbol_ = 'frxEURCAD';        // Ativo
 const data_size = 600;              // Quantidade de dados
-const window_size = 4;              // Tamanho da média móvel
+const window_size = 14;             // Tamanho da média móvel
 const n_layers = 4;                 // Número de camadas ocultas
 const n_epochs = 3;                 // Número de épocas de treinamento
 const learning_rate = 0.02;         // Taxa de aprendizado
@@ -149,11 +149,32 @@ async function dataPreprocessing(data_raw){
 async function aiModel(X, Y){
   console.log('--------- CRIACAO DO MODELO ---------');
 
-  showData(Y);
+  
   // Cria modelo
   const model = tf.sequential();
   // Cria e normaliza tensores de entradas
-  const {x, y} = await convertToTensor(X, Y);
+  //const {x, y} = await convertToTensor(X, Y);
+
+  console.log("Tensores nao normalizados");
+  const inputTensor = tf.tensor2d(X, [X.length, X[0].length]);
+  tf.print(inputTensor);
+  const labelTensor = tf.tensor2d(Y, [Y.length, 1]).reshape([Y.length, 1]);
+  tf.print(labelTensor);
+
+  const inputMax = inputTensor.max();
+  const inputMin = inputTensor.min();  
+  const labelMax = labelTensor.max();
+  const labelMin = labelTensor.min();
+  const x = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
+  const y = labelTensor.sub(labelMin).div(labelMax.sub(labelMin));
+  
+  console.log("Tensores normalizados")
+  tf.print(x);
+  tf.print(y);
+  const max = y.max();
+  const min = y.min();
+  //tf.print();
+  //tf.print(y.min());
   //const x = tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10));
   //const y = tf.tensor2d(Y, [Y.length, 1]).reshape([Y.length, 1]).div(tf.scalar(10));
   
@@ -180,19 +201,18 @@ async function aiModel(X, Y){
   // Mostra resumo do modelo
   tfvis.show.modelSummary({name: 'Model Summary'}, model);
 
-  console.log("Modelo Criado com Sucesso");
+  console.log("Modelo:");
   console.log(model);
 
-  
-  console.log('--------- TREINAMENTO DO MODELO ---------');
   
   // Compila o modelo para o treinamento
   model.compile({
     optimizer: tf.train.adam(learning_rate),
     loss: 'meanSquaredError'
   });
+  console.log("Modelo Criado com Sucesso");
 
-
+  console.log('--------- TREINAMENTO DO MODELO ---------');
   // Treina o modelo
   const hist = await model.fit(x, y,
     { batchSize: rnn_batch_size, 
@@ -206,18 +226,17 @@ async function aiModel(X, Y){
       )
   });
 
-  return { model: model, stats: hist };  
+  return { model: model, stats: hist, min: min, max: max};  
   
 }
 
-async function validate(X, Y, epochs, model, real, sma){
-
+async function validate(X, Y, epochs, model, real, sma, max, min){
   // Validade model
   console.log('--------- VALIDACAO DO MODELO ---------');
   let val_train_x = X.slice(0, Math.floor(training_size / 100 * X.length));
   console.log("Banco de treinamento (inputs):");
   showData(val_train_x);
-  let val_train_y = makePredictions(val_train_x, model);
+  let val_train_y = makePredictions(val_train_x, model, max, min);
   console.log("Banco de treinamento (outputs):");
   showData(val_train_y);
 
@@ -225,7 +244,7 @@ async function validate(X, Y, epochs, model, real, sma){
   let val_unseen_x = X.slice(Math.floor(training_size / 100 * X.length), X.length);
   console.log("Banco de teste (inputs):");
   showData(val_unseen_x);
-  let val_unseen_y = makePredictions(val_unseen_x, model);
+  let val_unseen_y = makePredictions(val_unseen_x, model, max, min );
   console.log("Banco de teste (outputs):");
   showData(val_unseen_y);
 
@@ -275,64 +294,37 @@ async function validate(X, Y, epochs, model, real, sma){
 
 }
 
-function convertToTensor(X, Y) {
-  return tf.tidy(() => {
 
-    //const inputTensor = tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10));
-    //const labelTensor = tf.tensor2d(Y, [Y.length, 1]).reshape([Y.length, 1]).div(tf.scalar(10));
-    const inputTensor = tf.tensor2d(X, [X.length, X[0].length]);
-    const labelTensor = tf.tensor2d(Y, [Y.length, 1]).reshape([Y.length, 1]);
-
-
-    const inputMax = inputTensor.max();
-    const inputMin = inputTensor.min();  
-    const labelMax = labelTensor.max();
-    const labelMin = labelTensor.min();
-    const normalizedInputs = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
-    const normalizedLabels = labelTensor.sub(labelMin).div(labelMax.sub(labelMin));
-
-
-    return {
-      inputs: normalizedInputs,
-      labels: normalizedLabels,
-      inputMax,
-      inputMin,
-      labelMax,
-      labelMin,
-    }
-  });  
-}
-
-function predictTensor(X){
-  return tf.tidy(() => {
-    
-    const inputTensor = tf.tensor2d(X, [X.length, X[0].length]);
-
-    const inputMax = inputTensor.max();
-    const inputMin = inputTensor.min();  
-    const normalizedTensor = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
-
-    return normalizedTensor;
-  });  
-}
-
-async function makePredictions(X, model)
+async function makePredictions(X, model, max, min)
 {
-  let normTensor = predictTensor(X);
-  const predictedResults = await model.predict(normTensor);
-  return Array.from(predictedResults.dataSync());
+  console.log("Fazendo predicao...");
+
+  // Criando e normalizando tensor
+  const XTensor = tf.tensor2d(X, [X.length, X[0].length]);
+  const inputMax = XTensor.max();
+  const inputMin = XTensor.min();  
+  const x = XTensor.sub(inputMin).div(inputMax.sub(inputMin));
+  //tf.print(x);
+  
+  //Fazendo predição
+  const predictedResults = model.predict(x);
+  tf.print(predictedResults);
+
+  const unNormPred = predictedResults.mul(max.sub(min)).add(min);
+  
+  const output = Array.from(unNormPred.dataSync());
+  tf.print(output);
+  return output;
 }
 
 async function main(X, Y, epochs, real, sma){
 
-  showData(Y);
   // Chama função que cria e treina o modelo
   const result = await aiModel(X, Y);
   console.log('Modelo treinado com sucesso');
-  console.log(result);
 
   // Chama função de validação do modelo
-  validate(X, Y, epochs, result.model, real, sma);
+  validate(X, Y, epochs, result.model, real, sma, result.max, result.min);
 }
 
 
