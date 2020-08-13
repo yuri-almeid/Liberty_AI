@@ -1,7 +1,8 @@
 
 // Definindo variáveis gobais ------------------------------------------------------------
 // Variáveis de configuração (Pode mexer)
-const symbol_ = 'frxEURCAD';        // Ativo
+//const symbol_ = 'frxEURCAD';        // Ativo
+const symbol_ = 'R_50';             // Ativo
 const data_size = 600;              // Quantidade de dados
 const window_size = 14;             // Tamanho da média móvel
 const n_layers = 4;                 // Número de camadas ocultas
@@ -20,6 +21,7 @@ const rnn_batch_size = window_size;
 const output_layer_shape = rnn_output_neurons;
 const output_layer_neurons = 1;
 
+let test;
 
 // Função usada para mostrar apenas 10 valores do banco e mostrar o seu tamanho
 function showData(data){
@@ -157,7 +159,7 @@ async function aiModel(X, Y){
 
   console.log("Tensores nao normalizados");
   const inputTensor = tf.tensor2d(X, [X.length, X[0].length]);
-  tf.print(inputTensor);
+  //tf.print(inputTensor);
   const labelTensor = tf.tensor2d(Y, [Y.length, 1]).reshape([Y.length, 1]);
   tf.print(labelTensor);
 
@@ -169,10 +171,16 @@ async function aiModel(X, Y){
   const y = labelTensor.sub(labelMin).div(labelMax.sub(labelMin));
   
   console.log("Tensores normalizados")
-  tf.print(x);
+  //tf.print(x);
   tf.print(y);
-  const max = y.max();
-  const min = y.min();
+  const max = labelMax;
+  const min = labelMin;
+
+  //console.log("Valor Minimo:");
+  //tf.print(min);
+  //console.log("Valor Maximo:");
+  //tf.print(max);
+  
   //tf.print();
   //tf.print(y.min());
   //const x = tf.tensor2d(X, [X.length, X[0].length]).div(tf.scalar(10));
@@ -213,6 +221,7 @@ async function aiModel(X, Y){
   console.log("Modelo Criado com Sucesso");
 
   console.log('--------- TREINAMENTO DO MODELO ---------');
+  console.log("Aguarde o fim do treinamento.")
   // Treina o modelo
   const hist = await model.fit(x, y,
     { batchSize: rnn_batch_size, 
@@ -234,19 +243,20 @@ async function validate(X, Y, epochs, model, real, sma, max, min){
   // Validade model
   console.log('--------- VALIDACAO DO MODELO ---------');
   let val_train_x = X.slice(0, Math.floor(training_size / 100 * X.length));
-  console.log("Banco de treinamento (inputs):");
-  showData(val_train_x);
-  let val_train_y = makePredictions(val_train_x, model, max, min);
+  //console.log("Banco de treinamento (inputs):");
+  //showData(val_train_x);
+  let val_train_y = await makePredictions(val_train_x, model, max, min);
   console.log("Banco de treinamento (outputs):");
   showData(val_train_y);
 
   // validate on unseen
   let val_unseen_x = X.slice(Math.floor(training_size / 100 * X.length), X.length);
-  console.log("Banco de teste (inputs):");
-  showData(val_unseen_x);
-  let val_unseen_y = makePredictions(val_unseen_x, model, max, min );
+  //console.log("Banco de teste (inputs):");
+  //showData(val_unseen_x);
+  let val_unseen_y = await makePredictions(val_unseen_x, model, max, min );
   console.log("Banco de teste (outputs):");
   showData(val_unseen_y);
+  //tf.print(val_unseen_y);
 
 
   
@@ -304,16 +314,22 @@ async function makePredictions(X, model, max, min)
   const inputMax = XTensor.max();
   const inputMin = XTensor.min();  
   const x = XTensor.sub(inputMin).div(inputMax.sub(inputMin));
-  //tf.print(x);
-  
+  //tf.print(max);
+  //tf.print(min);
   //Fazendo predição
   const predictedResults = model.predict(x);
-  tf.print(predictedResults);
+  //tf.print(predictedResults);
 
   const unNormPred = predictedResults.mul(max.sub(min)).add(min);
+
+  //showData(unNormPred)
+  //tf.print(unNormPred)
   
   const output = Array.from(unNormPred.dataSync());
-  tf.print(output);
+
+  console.log("Predicao concluida:")
+  showData(output);
+  //tf.print(output);
   return output;
 }
 
