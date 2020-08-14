@@ -72,6 +72,7 @@ function convertToTensor(data) {
     // Step 1. Shuffle the data    
     tf.util.shuffle(data);
 
+
     // Step 2. Convert data to Tensor
     const inputs = data.map(d => d.epoch);
     const labels = data.map(d => d.close);

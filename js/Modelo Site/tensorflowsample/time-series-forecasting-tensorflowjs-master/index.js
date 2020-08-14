@@ -215,8 +215,6 @@ function onClickValidate() {
   let inputs = sma_vec.map(function(inp_f) {
    return inp_f['set'].map(function (val) { return val['price']; });
   });
-  console.log("AQUI")
-  console.log(inputs);
 
   // validate on training
   let val_train_x = inputs.slice(0, Math.floor(trainingsize / 100 * inputs.length));

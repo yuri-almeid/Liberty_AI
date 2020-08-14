@@ -2,34 +2,47 @@
 // Definindo variáveis gobais ------------------------------------------------------------
 // Variáveis de configuração (Pode mexer)
 //const symbol_ = 'frxEURCAD';        // Ativo
-const symbol_ = 'R_50';             // Ativo
+const symbol_ = 'frxEURCAD';             // Ativo
 const data_size = 600;              // Quantidade de dados
-const window_size = 14;             // Tamanho da média móvel
+const window_size = 20;             // Tamanho da média móvel
 const n_layers = 4;                 // Número de camadas ocultas
-const n_epochs = 3;                 // Número de épocas de treinamento
+const n_epochs = 4;                // Número de épocas de treinamento
 const learning_rate = 0.02;         // Taxa de aprendizado
 const training_size = 85;           // Tamanho da parcela de treino em %
+
+// Plota definicoes
+console.log('------------- LIBERTY AI -------------');
+console.log("Ativo: ", symbol_);
+console.log("Quantidade de dados: ", data_size);
+console.log("Janela da SMA: ", window_size);
+console.log("Numero de camadas ocultas: ", n_layers);
+console.log("Numero de epocas: ", n_epochs);
+console.log("Taxa de aprendizado: ", learning_rate);
+console.log("Parcela de treinamento (%): ", training_size);
 
 // Variáveis de dimensionamento (Não pode mexer)
 const input_layer_shape  = window_size;                                               // Tamanho da camada de entrada
 const input_layer_neurons = 100;                                                      // Quantidade de neurons da entrada
-const rnn_input_layer_features = 10;                                                  // Quantidade de recurso da rede neural recursiva
+const rnn_input_layer_features = 10;                                                  // Quantidade de recurso da rede neural recorrente
 const rnn_input_layer_timesteps = input_layer_neurons / rnn_input_layer_features;     // Quantidade de "Passos de tempo" da RNR
 const rnn_input_shape  = [rnn_input_layer_features, rnn_input_layer_timesteps];       // Tamanho da camada de entrada da RNR
 const rnn_output_neurons = 20;                                                        // Quantidade de neurônios da saída da RNR
-const rnn_batch_size = window_size;
-const output_layer_shape = rnn_output_neurons;
-const output_layer_neurons = 1;
+const rnn_batch_size = window_size;                                                   // Tamanho do "lote" de dados
+const output_layer_shape = rnn_output_neurons;                                        // Tamanho da camada de saída
+const output_layer_neurons = 1;                                                       // Quantidade de Neurônios na camada de saída
 
-let test;
 
 // Função usada para mostrar apenas 10 valores do banco e mostrar o seu tamanho
 function showData(data){
+  // Cria variável auxiliar
   let newData = [];
+  // Seleciona apenas os primeiros 10 valores
   for (i = 0; i < 10; i++){
     newData[i] = data[i];
   }
+  // Plota no dados no console 
   console.log(newData);
+  // Plota tamanho dos dados no console
   console.log(data.length);
 }
 
@@ -37,11 +50,14 @@ function showData(data){
 function getHistory(sym, periodo, stl) {
   console.log('------------- COLETA DE DADOS -------------');
   let history;
+  // Cria canal com a corretora
 	var ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-	//console.log(periodo);
+  //console.log(periodo);
+  // Passa o período para inteiro
 	periodo = parseInt(periodo, 10);
 	//console.log(periodo);
 
+  // Manda JSON para corretora
 	ws.onopen = function (evt) {
 		ws.send(JSON.stringify({
 			ticks_history: sym,
@@ -51,13 +67,18 @@ function getHistory(sym, periodo, stl) {
 			start: 1,
 			style: stl
 		}));
-	};
+  };
+  
+  // Função de evento de recebimento de dado da corretora
 	ws.onmessage = function (msg) {
+    // Recebe dados 
 		var data = JSON.parse(msg.data);
 		if (stl === 'ticks') {
+      // Nessa condição o codigo não faz absolutamente nada
 			history = data.history;
 			//AI_preprocessing_tk(history, periodo);
 		} else if (stl === 'candles') {
+      // Manda dados recebidos pra funcao de preprocessamento de dados 
       history = data.candles;
       console.log("Dados Coletados com sucesso.");
       //console.log(history);
@@ -328,7 +349,7 @@ async function makePredictions(X, model, max, min)
   const output = Array.from(unNormPred.dataSync());
 
   console.log("Predicao concluida:")
-  showData(output);
+  //showData(output);
   //tf.print(output);
   return output;
 }
@@ -340,8 +361,13 @@ async function main(X, Y, epochs, real, sma){
   console.log('Modelo treinado com sucesso');
 
   // Chama função de validação do modelo
-  validate(X, Y, epochs, result.model, real, sma, result.max, result.min);
+  await validate(X, Y, epochs, result.model, real, sma, result.max, result.min);
+
+  // Salva modelo
+  await result.model.save('downloads://my-model');
+
 }
+
 
 
 getHistory(symbol_, data_size, 'candles');
